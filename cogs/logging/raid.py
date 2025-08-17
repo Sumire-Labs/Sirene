@@ -16,7 +16,7 @@ from utils.embeds import embed_factory
 if TYPE_CHECKING:
     from src.main import MyBot
 
-class RaidDetectionCog(commands.Cog, name="RaidDetector"):
+class RaidDetectionCog(commands.Cog):
     """Detects potential raid/spam behavior."""
 
     # --- Configuration for raid detection ---
@@ -115,7 +115,8 @@ class RaidDetectionCog(commands.Cog, name="RaidDetector"):
                 description=f"**{self.MESSAGE_TIME_WINDOW_SECONDS}秒以内**に **{len(message_deque)}件** のメッセージが投稿されました。"
             )
             embed.add_field(name="最新の投稿者", value=f"{message.author.mention} (`{message.author.name}`)", inline=False)
-            embed.add_field(name="チャンネル", value=message.channel.mention, inline=False)
+            channel_display = message.channel.mention if isinstance(message.channel, (discord.TextChannel, discord.Thread)) else f"`{message.channel}`"
+            embed.add_field(name="チャンネル", value=channel_display, inline=False)
             await log_channel.send(embed=embed)
 
             message_deque.clear()

@@ -10,10 +10,9 @@ class TicketCreateView(View):
     @button(label="チケットを作成", style=discord.ButtonStyle.success, emoji="✉️", custom_id="ticket_create_button")
     async def create_ticket_callback(self, button: Button, interaction: discord.Interaction):
         """Callback for the create ticket button."""
-        # The actual ticket creation logic is in the TicketCore cog.
-        # We fetch the cog and call its method.
-        # interaction.client refers to the Bot instance.
-        ticket_cog = interaction.client.get_cog("TicketCore")
+        # We need to ensure the client is our custom bot class to access the cog.
+        bot = interaction.client
+        ticket_cog = bot.get_cog("TicketCore") # type: ignore
         if ticket_cog:
             await ticket_cog.create_ticket_channel(interaction)
         else:

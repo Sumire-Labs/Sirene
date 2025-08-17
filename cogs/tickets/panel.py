@@ -15,7 +15,7 @@ from .views import TicketCreateView
 if TYPE_CHECKING:
     from src.main import MyBot
 
-class TicketPanelCog(commands.Cog, name="TicketPanel"):
+class TicketPanelCog(commands.Cog):
     """Commands to manage the ticket panel."""
 
     def __init__(self, bot: "MyBot"):
@@ -42,7 +42,8 @@ class TicketPanelCog(commands.Cog, name="TicketPanel"):
         
         if ctx.channel.id != settings.ticket_panel_channel_id:
             panel_channel = self.bot.get_channel(settings.ticket_panel_channel_id)
-            await ctx.respond(embed=embed_factory.error("コマンドエラー", f"このコマンドは、設定されたチケットパネル用チャンネル ({panel_channel.mention if panel_channel else '不明なチャンネル'}) でのみ実行できます。"), ephemeral=True)
+            channel_mention = panel_channel.mention if panel_channel else "不明なチャンネル"
+            await ctx.respond(embed=embed_factory.error("コマンドエラー", f"このコマンドは、設定されたチケットパネル用チャンネル ({channel_mention}) でのみ実行できます。"), ephemeral=True)
             return
 
         embed = embed_factory.info(

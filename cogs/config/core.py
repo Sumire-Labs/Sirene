@@ -116,17 +116,23 @@ class ConfigSelectionView(View):
 
     @button(label="ロギング設定", style=discord.ButtonStyle.secondary, emoji="📜")
     async def logging_button_callback(self, button: Button, interaction: discord.Interaction):
+        if not interaction.guild:
+            await interaction.response.send_message("この操作はサーバー内でのみ実行できます。", ephemeral=True)
+            return
         modal = LoggingConfigModal(self.bot, self.db, interaction.guild.id)
         await interaction.response.send_modal(modal)
 
     @button(label="チケット設定", style=discord.ButtonStyle.secondary, emoji="🎟️")
     async def ticket_button_callback(self, button: Button, interaction: discord.Interaction):
+        if not interaction.guild:
+            await interaction.response.send_message("この操作はサーバー内でのみ実行できます。", ephemeral=True)
+            return
         modal = TicketConfigModal(self.bot, self.db, interaction.guild.id)
         await interaction.response.send_modal(modal)
 
 # --- Cog with the /config command ---
 
-class ConfigCog(commands.Cog, name="Config"):
+class ConfigCog(commands.Cog):
     """The main command to configure the bot's features."""
 
     def __init__(self, bot: "MyBot"):

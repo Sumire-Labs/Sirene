@@ -14,17 +14,24 @@ from utils.embeds import embed_factory
 if TYPE_CHECKING:
     from src.main import MyBot
 
-class TicketCoreCog(commands.Cog, name="TicketCore"):
+class TicketCoreCog(commands.Cog):
     """Core logic for ticket creation and management."""
 
     def __init__(self, bot: "MyBot"):
         self.bot = bot
         self.container = self.bot.container
         self.db = self.container.db
+        self.ai_service = self.container.ai_service
 
     async def create_ticket_channel(self, interaction: discord.Interaction):
         """The core logic to create a new ticket channel."""
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        # Defer response to prevent interaction timeout
+        await interaction.response.defer(ephemeral=True)
+
+        # Ensure we have a guild and user
+        if not interaction.guild or not isinstance(interaction.user, discord.Member):
+            await interaction.followup.send("この操作はサーバー内でのみ実行できます。", ephemeral=True)
+            return
 
         guild = interaction.guild
         user = interaction.user
@@ -41,6 +48,7 @@ class TicketCoreCog(commands.Cog, name="TicketCore"):
             await interaction.followup.send("チケット設定（カテゴリまたはスタッフロール）が無効です。管理者に連絡してください。", ephemeral=True)
             return
 
+        # Define channel permissions
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
             user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
@@ -60,58 +68,57 @@ class TicketCoreCog(commands.Cog, name="TicketCore"):
             await interaction.followup.send(f"チャンネルの作成中にエラーが発生しました: {e}", ephemeral=True)
             return
 
+        # Record ticket in the database
         await self.db.create_ticket(ticket_channel.id, guild.id, user.id)
 
+        # Send a welcome message in the new channel
         welcome_embed = embed_factory.info(
             title=f"ようこそ、{user.name}さん",
             description="このチャンネルはあなたとスタッフ専用です。\nご用件をできるだけ詳しくご記入ください。\n\nAIが内容を分析し、一次回答や担当者への情報提供を補助します。"
         )
         await ticket_channel.send(f"{user.mention} {staff_role.mention}", embed=welcome_embed)
 
+        # Notify the user that the channel has been created
         await interaction.followup.send(f"チケットチャンネル {ticket_channel.mention} を作成しました。", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """Handles the first message in a ticket channel to provide an AI-powered initial response."""
-        # Ignore messages from bots, or in DMs
         if message.author.bot or not message.guild:
             return
 
-        # Check if the channel is an open ticket channel
         ticket_data = await self.db.get_ticket_by_channel(message.channel.id)
-        if not ticket_data or ticket_data[3] != "open": # status is the 4th column (index 3)
+        if not ticket_data or ticket_data[3] != "open":
             return
 
-        # Check if the message is from the user who opened the ticket
-        ticket_user_id = ticket_data[2] # user_id is the 3rd column (index 2)
+        ticket_user_id = ticket_data[2]
         if message.author.id != ticket_user_id:
             return
 
-        # Check if this is the very first message from the user in this channel
-        # We check for 3 messages: channel creation message, bot's welcome message, and the user's first message.
         history = await message.channel.history(limit=3).flatten()
-        if len(history) > 2: # If more than the initial two messages exist, it's not the first message.
+        user_messages = [m for m in history if m.author.id == ticket_user_id]
+        if len(user_messages) > 1:
             return
 
-        # --- This is the first message, let's get an AI response ---
         await message.channel.trigger_typing()
 
         user_inquiry = message.content
         prompt = (
             f"ユーザーがサポートチケットで最初の問い合わせをしました。"
             f"以下の内容を分析し、考えられる解決策や、問題を特定するために必要な追加の質問を、ユーザーに分かりやすく提案してください。\n\n"
-            f"---\nユーザーの問い合わせ内容:
-{user_inquiry}
----"
+            f"---\nユーザーの問い合わせ内容:\n{user_inquiry}\n---"
         )
 
-        ai_response = await self.container.ai_service.ask_question(prompt)
+        ai_response = await self.ai_service.ask_question(prompt)
 
         embed = embed_factory.info(
             title="AIによる一次回答",
             description=ai_response
         )
-        embed.set_footer(text="この回答はAIによって生成されました。スタッフが確認し、対応を引き継ぎます。", icon_url=self.bot.user.display_avatar.url)
+        if self.bot.user and self.bot.user.display_avatar:
+            embed.set_footer(text="この回答はAIによって生成されました。スタッフが確認し、対応を引き継ぎます。", icon_url=self.bot.user.display_avatar.url)
+        else:
+            embed.set_footer(text="この回答はAIによって生成されました。スタッフが確認し、対応を引き継ぎます。")
         
         await message.channel.send(embed=embed)
 
