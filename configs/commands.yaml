@@ -10,10 +10,6 @@ cogs:
       image: true
       ocr: true
       translate: true
-  moderation:
-    enabled: true
-    commands:
-      actions: true
   logging:
     enabled: true
     commands:
