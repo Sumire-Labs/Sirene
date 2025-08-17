@@ -22,7 +22,6 @@ class AIService:
         self.initialized = False
         
         credentials = None
-        # If a path to a JSON key is provided, use it for authentication.
         if self.config.credentials_json_path and Path(self.config.credentials_json_path).is_file():
             try:
                 credentials = service_account.Credentials.from_service_account_file(
@@ -33,7 +32,6 @@ class AIService:
                 print(f"[ERROR] Failed to load credentials from JSON file: {e}")
                 return
         else:
-            # Otherwise, fall back to Application Default Credentials (ADC).
             print("Authenticating to Vertex AI using Application Default Credentials (ADC).")
 
         try:
@@ -56,10 +54,8 @@ class AIService:
             self.image_model = None
 
     async def ask_question(self, prompt: str) -> str:
-        """Generates a text response from a prompt using the chat model."""
         if not self.initialized or not self.chat_model:
             return "The chat model is not available due to an initialization error."
-
         try:
             response = await self.chat_model.generate_content_async(prompt)
             return response.text
@@ -68,10 +64,8 @@ class AIService:
             return f"An error occurred while processing your request: {e}"
 
     async def generate_image(self, prompt: str, number_of_images: int = 1) -> list[io.BytesIO] | str:
-        """Generates images from a prompt and returns them as a list of BytesIO objects."""
         if not self.initialized or not self.image_model:
             return "The image model is not available due to an initialization error."
-
         try:
             response = self.image_model.generate_images(
                 prompt=prompt,
@@ -84,10 +78,8 @@ class AIService:
             return f"An error occurred while generating the image: {e}"
 
     async def ping(self) -> float:
-        """Measures the AI API latency and returns it in milliseconds."""
         if not self.initialized or not self.chat_model:
             return -1.0
-        
         start_time = time.monotonic()
         try:
             await self.chat_model.count_tokens_async("ping")
@@ -96,36 +88,9 @@ class AIService:
         end_time = time.monotonic()
         return (end_time - start_time) * 1000
 
-    async def translate_text(self, text: str, target_language: str, source_language: str | None = None) -> str:
-        """Translates text to the target language."""
-        if not self.initialized or not self.chat_model:
-            return "The chat model is not available due to an initialization error."
-
-        if source_language:
-            prompt = f"以下の「{source_language}」の文章を「{target_language}」に翻訳してください。翻訳結果の文章だけを返してください。
-
-```
-{text}
-```"
-        else:
-            prompt = f"以下の文章を「{target_language}」に翻訳してください。翻訳元の言語は自動で判別し、翻訳結果の文章だけを返してください。
-
-```
-{text}
-```"
-
-        try:
-            response = await self.chat_model.generate_content_async(prompt)
-            return response.text
-        except Exception as e:
-            print(f"[ERROR] Vertex AI (Translate): {e}")
-            return f"An error occurred during translation: {e}"
-
     async def generate_text_from_image(self, image_bytes: bytes, mime_type: str, prompt: str) -> str:
-        """Generates text from an image using the multimodal chat model."""
         if not self.initialized or not self.chat_model:
             return "The chat model is not available due to an initialization error."
-
         try:
             image_part = Part.from_data(data=image_bytes, mime_type=mime_type)
             response = await self.chat_model.generate_content_async([image_part, prompt])
@@ -134,4 +99,16 @@ class AIService:
             print(f"[ERROR] Vertex AI (Multimodal): {e}")
             return f"An error occurred while processing the image: {e}"
 
-# Note: The singleton instance is removed. Instantiation is now handled by the DI container.
+    async def translate_text(self, text: str, target_language: str, source_language: str | None = None) -> str:
+        if not self.initialized or not self.chat_model:
+            return "The chat model is not available due to an initialization error."
+        if source_language:
+            prompt = f"以下の「{source_language}」の文章を「{target_language}」に翻訳してください。翻訳結果の文章だけを返してください。\n\n```\n{text}\n```"
+        else:
+            prompt = f"以下の文章を「{target_language}」に翻訳してください。翻訳元の言語は自動で判別し、翻訳結果の文章だけを返してください。\n\n```\n{text}\n```"
+        try:
+            response = await self.chat_model.generate_content_async(prompt)
+            return response.text
+        except Exception as e:
+            print(f"[ERROR] Vertex AI (Translate): {e}")
+            return f"An error occurred during translation: {e}"

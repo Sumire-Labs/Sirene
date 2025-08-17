@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 # Add the project root to the Python path
 import sys
@@ -30,18 +30,22 @@ class TranslateCog(commands.Cog):
     async def translate(
         self,
         ctx: discord.ApplicationContext,
-        text: discord.Option(str, description="翻訳したいテキスト", required=True),
-        target_language: discord.Option(
+        text: Annotated[str, discord.Option(description="翻訳したいテキスト", required=True)],
+        target_language: Annotated[
             str,
-            description="翻訳先の言語",
-            choices=["日本語", "英語", "中国語", "韓国語", "スペイン語", "フランス語", "ドイツ語"],
-            required=True
-        ),
-        source_language: discord.Option(
-            str,
-            description="翻訳元の言語（任意、未指定の場合は自動検出）",
-            required=False
-        )
+            discord.Option(
+                description="翻訳先の言語",
+                choices=["日本語", "英語", "中国語", "韓国語", "スペイン語", "フランス語", "ドイツ語"],
+                required=True
+            )
+        ],
+        source_language: Annotated[
+            str | None,
+            discord.Option(
+                description="翻訳元の言語（任意、未指定の場合は自動検出）",
+                required=False
+            )
+        ]
     ):
         """Translates text into another language."""
         command_config = self.config_loader.commands.cogs.get("ai", {}).commands

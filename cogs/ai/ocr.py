@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 # Add the project root to the Python path
 import sys
@@ -30,11 +30,11 @@ class OcrCog(commands.Cog):
     async def ocr(
         self, 
         ctx: discord.ApplicationContext,
-        image: discord.Option(discord.Attachment, description="読み取りたい画像ファイル", required=True)
+        image: Annotated[discord.Attachment, discord.Option(description="読み取りたい画像ファイル", required=True)]
     ):
         """Reads text from an image attachment."""
         # Check if the command is enabled in commands.yaml
-        command_config = self.config_loader.commands.cogs.get("ai", {}).commands
+        command_config = self.config_loader.commands.cogs["ai"].commands
         if not command_config or not command_config.get("ocr", True): # Default to True if not specified
             await ctx.respond(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。"),
                                 ephemeral=True)
