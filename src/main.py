@@ -10,12 +10,18 @@ sys.path.append(str(project_root))
 
 from core.di import container
 from utils.embeds import embed_factory
+from cogs.tickets.views import TicketCreateView
 
 class MyBot(discord.Bot):
     """Custom Bot class to hold the DI container."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.container = container
+
+    async def setup_hook(self):
+        """This is called once when the bot first starts up."""
+        # Register the persistent view for ticket creation.
+        self.add_view(TicketCreateView())
 
 # --- Bot setup ---
 

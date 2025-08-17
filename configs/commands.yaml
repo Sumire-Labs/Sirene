@@ -13,10 +13,15 @@ cogs:
   logging:
     enabled: true
     commands:
-      events: true   # cogs/logging/events.py
-      settings: true # cogs/logging/settings.py
-      raid: true     # cogs/logging/raid.py
+      events: true
+      raid: true
+      settings: true
   config:
     enabled: true
     commands:
+      core: true
+  tickets:
+    enabled: true
+    commands:
+      panel: true
       core: true
