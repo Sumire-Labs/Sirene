@@ -11,3 +11,4 @@ cogs:
       ask: true
       imagine: true
       ocr: true
+      translate: true

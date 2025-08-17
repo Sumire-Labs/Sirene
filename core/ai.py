@@ -96,6 +96,31 @@ class AIService:
         end_time = time.monotonic()
         return (end_time - start_time) * 1000
 
+    async def translate_text(self, text: str, target_language: str, source_language: str | None = None) -> str:
+        """Translates text to the target language."""
+        if not self.initialized or not self.chat_model:
+            return "The chat model is not available due to an initialization error."
+
+        if source_language:
+            prompt = f"以下の「{source_language}」の文章を「{target_language}」に翻訳してください。翻訳結果の文章だけを返してください。
+
+```
+{text}
+```"
+        else:
+            prompt = f"以下の文章を「{target_language}」に翻訳してください。翻訳元の言語は自動で判別し、翻訳結果の文章だけを返してください。
+
+```
+{text}
+```"
+
+        try:
+            response = await self.chat_model.generate_content_async(prompt)
+            return response.text
+        except Exception as e:
+            print(f"[ERROR] Vertex AI (Translate): {e}")
+            return f"An error occurred during translation: {e}"
+
     async def generate_text_from_image(self, image_bytes: bytes, mime_type: str, prompt: str) -> str:
         """Generates text from an image using the multimodal chat model."""
         if not self.initialized or not self.chat_model:
