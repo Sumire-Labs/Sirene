@@ -10,3 +10,4 @@ cogs:
     commands:
       ask: true
       imagine: true
+      ocr: true

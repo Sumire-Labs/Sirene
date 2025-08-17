@@ -1,5 +1,5 @@
 import vertexai
-from vertexai.generative_models import GenerativeModel
+from vertexai.generative_models import GenerativeModel, Part
 from vertexai.preview.vision_models import ImageGenerationModel
 from google.oauth2 import service_account
 import io
@@ -95,5 +95,18 @@ class AIService:
             return -1.0
         end_time = time.monotonic()
         return (end_time - start_time) * 1000
+
+    async def generate_text_from_image(self, image_bytes: bytes, mime_type: str, prompt: str) -> str:
+        """Generates text from an image using the multimodal chat model."""
+        if not self.initialized or not self.chat_model:
+            return "The chat model is not available due to an initialization error."
+
+        try:
+            image_part = Part.from_data(data=image_bytes, mime_type=mime_type)
+            response = await self.chat_model.generate_content_async([image_part, prompt])
+            return response.text
+        except Exception as e:
+            print(f"[ERROR] Vertex AI (Multimodal): {e}")
+            return f"An error occurred while processing the image: {e}"
 
 # Note: The singleton instance is removed. Instantiation is now handled by the DI container.
