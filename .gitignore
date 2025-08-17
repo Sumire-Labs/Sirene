@@ -1,0 +1,22 @@
+# Environments
+.venv/
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# IDE settings
+.vscode/
+.idea/
+
+# Sensitive config file
+# A template file (config.template.yaml) should be version-controlled instead.
+configs/config.yaml
+
+# Database files
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log

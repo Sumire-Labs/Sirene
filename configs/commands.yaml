@@ -1,0 +1,12 @@
+# Enable or disable cogs and commands
+# Cogs are modules that group commands. Disabling a cog disables all its commands.
+cogs:
+  general:
+    enabled: true
+    commands:
+      ping: true
+  ai:
+    enabled: true
+    commands:
+      ask: true
+      imagine: true
