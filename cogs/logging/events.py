@@ -23,21 +23,30 @@ class LoggingCog(commands.Cog):
         self.config = self.container.config_loader.config.logging
         self.db = self.container.db
 
-    async def get_log_channel_for_guild(self, guild_id: int) -> discord.TextChannel | None:
-        """Helper to get the log channel for a specific guild from the DB."""
-        channel_id = await self.db.get_log_channel(guild_id)
+    async def get_log_settings(self, guild_id: int) -> tuple[discord.TextChannel | None, bool]:
+        """Helper to get the log channel and enabled status for a guild."""
+        settings = await self.db.get_guild_settings(guild_id)
+        if not settings:
+            return (None, False)
+
+        channel_id, enabled = settings
+        if not enabled:
+            return (None, False)
+
+        channel = None
         if channel_id:
             channel = self.bot.get_channel(channel_id)
-            if isinstance(channel, discord.TextChannel):
-                return channel
-        return None
+            if not isinstance(channel, discord.TextChannel):
+                channel = None
+        
+        return channel, enabled
 
     # --- Member Join/Leave Events ---
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         if not self.config.events.member_join_leave: return
-        log_channel = await self.get_log_channel_for_guild(member.guild.id)
-        if not log_channel: return
+        log_channel, enabled = await self.get_log_settings(member.guild.id)
+        if not enabled or not log_channel: return
 
         embed = embed_factory.success(
             title="メンバーが参加しました",
@@ -50,8 +59,8 @@ class LoggingCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         if not self.config.events.member_join_leave: return
-        log_channel = await self.get_log_channel_for_guild(member.guild.id)
-        if not log_channel: return
+        log_channel, enabled = await self.get_log_settings(member.guild.id)
+        if not enabled or not log_channel: return
 
         embed = embed_factory.error(
             title="メンバーが退出しました",
@@ -64,9 +73,9 @@ class LoggingCog(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
         if not self.config.events.message_edit_delete: return
-        if not message.guild: return # Ignore DMs
-        log_channel = await self.get_log_channel_for_guild(message.guild.id)
-        if not log_channel: return
+        if not message.guild: return
+        log_channel, enabled = await self.get_log_settings(message.guild.id)
+        if not enabled or not log_channel: return
         if message.author.bot or message.channel == log_channel: return
 
         content = message.content if message.content else "（本文なし、または取得できませんでした）"
@@ -85,9 +94,9 @@ class LoggingCog(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         if not self.config.events.message_edit_delete: return
-        if not before.guild: return # Ignore DMs
-        log_channel = await self.get_log_channel_for_guild(before.guild.id)
-        if not log_channel: return
+        if not before.guild: return
+        log_channel, enabled = await self.get_log_settings(before.guild.id)
+        if not enabled or not log_channel: return
         if before.author.bot or before.channel == log_channel: return
         if before.content == after.content: return
 
@@ -107,8 +116,8 @@ class LoggingCog(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_role_create(self, role: discord.Role):
         if not self.config.events.role_changes: return
-        log_channel = await self.get_log_channel_for_guild(role.guild.id)
-        if not log_channel: return
+        log_channel, enabled = await self.get_log_settings(role.guild.id)
+        if not enabled or not log_channel: return
 
         embed = embed_factory.success(
             title="ロールが作成されました",
@@ -121,8 +130,8 @@ class LoggingCog(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role: discord.Role):
         if not self.config.events.role_changes: return
-        log_channel = await self.get_log_channel_for_guild(role.guild.id)
-        if not log_channel: return
+        log_channel, enabled = await self.get_log_settings(role.guild.id)
+        if not enabled or not log_channel: return
 
         embed = embed_factory.error(
             title="ロールが削除されました",
@@ -135,8 +144,8 @@ class LoggingCog(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_role_update(self, before: discord.Role, after: discord.Role):
         if not self.config.events.role_changes: return
-        log_channel = await self.get_log_channel_for_guild(before.guild.id)
-        if not log_channel: return
+        log_channel, enabled = await self.get_log_settings(before.guild.id)
+        if not enabled or not log_channel: return
         if before.name == after.name and before.color == after.color: return
 
         embed = embed_factory.warning(

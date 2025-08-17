@@ -17,7 +17,6 @@ class Database:
         try:
             self.conn = await aiosqlite.connect(self.db_path)
             print(f"Successfully connected to database at '{self.db_path}'")
-            # Create tables on startup
             await self.setup_tables()
         except Exception as e:
             print(f"[ERROR] Failed to connect to database: {e}")
@@ -30,11 +29,8 @@ class Database:
 
     async def setup_tables(self):
         """Creates the necessary tables if they don't exist."""
-        if not self.conn:
-            return
-        
+        if not self.conn: return
         cursor = await self.conn.cursor()
-        # Example table for logging command usage
         await cursor.execute("""
             CREATE TABLE IF NOT EXISTS command_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,11 +40,11 @@ class Database:
                 timestamp DATETIME NOT NULL
             )
         """)
-
         await cursor.execute("""
             CREATE TABLE IF NOT EXISTS guild_settings (
                 guild_id INTEGER PRIMARY KEY,
-                log_channel_id INTEGER
+                log_channel_id INTEGER,
+                logging_enabled BOOLEAN DEFAULT TRUE
             )
         """)
         await self.conn.commit()
@@ -57,42 +53,51 @@ class Database:
 
     async def ping(self) -> float:
         """Measures the database query latency and returns it in milliseconds."""
-        if not self.conn:
-            return -1.0
-        
+        if not self.conn: return -1.0
         start_time = time.monotonic()
         async with self.conn.execute("SELECT 1") as cursor:
             await cursor.fetchone()
         end_time = time.monotonic()
-        # Return latency in milliseconds
         return (end_time - start_time) * 1000
 
     async def set_log_channel(self, guild_id: int, channel_id: int | None):
         """Sets or clears the log channel for a specific guild."""
-        if not self.conn:
-            return
+        if not self.conn: return
         await self.conn.execute(
-            "INSERT OR REPLACE INTO guild_settings (guild_id, log_channel_id) VALUES (?, ?)",
+            """
+            INSERT INTO guild_settings (guild_id, log_channel_id) VALUES (?, ?)
+            ON CONFLICT(guild_id) DO UPDATE SET log_channel_id = excluded.log_channel_id
+            """,
             (guild_id, channel_id)
         )
         await self.conn.commit()
 
-    async def get_log_channel(self, guild_id: int) -> int | None:
-        """Gets the log channel ID for a specific guild."""
-        if not self.conn:
-            return None
+    async def set_logging_status(self, guild_id: int, enabled: bool):
+        """Enables or disables logging for a specific guild."""
+        if not self.conn: return
+        await self.conn.execute(
+            """
+            INSERT INTO guild_settings (guild_id, logging_enabled) VALUES (?, ?)
+            ON CONFLICT(guild_id) DO UPDATE SET logging_enabled = excluded.logging_enabled
+            """,
+            (guild_id, enabled)
+        )
+        await self.conn.commit()
+
+    async def get_guild_settings(self, guild_id: int) -> tuple[int | None, bool]:
+        """Gets the log channel ID and enabled status for a specific guild."""
+        if not self.conn: return (None, False)
         async with self.conn.execute(
-            "SELECT log_channel_id FROM guild_settings WHERE guild_id = ?",
+            "SELECT log_channel_id, logging_enabled FROM guild_settings WHERE guild_id = ?",
             (guild_id,)
         ) as cursor:
             row = await cursor.fetchone()
-            return row[0] if row else None
-
+            if row:
+                # Return (channel_id, logging_enabled). logging_enabled defaults to True if not set.
+                return (row[0], row[1] if row[1] is not None else True)
+            else:
+                # Default settings for a new guild
+                return (None, True)
 
 # --- Singleton instance ---
 db_instance = Database(DB_FILE)
-
-# In main.py, you would call:
-# await db_instance.connect()
-# and add a shutdown hook for:
-# await db_instance.close()

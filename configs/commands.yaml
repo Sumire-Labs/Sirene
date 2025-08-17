@@ -2,20 +2,23 @@ cogs:
   general:
     enabled: true
     commands:
-      ping: true # cogs/general/ping.py
+      ping: true
   ai:
     enabled: true
     commands:
-      chat: true      # cogs/ai/chat.py
-      image: true     # cogs/ai/image.py
-      ocr: true       # cogs/ai/ocr.py
-      translate: true # cogs/ai/translate.py
+      chat: true
+      image: true
+      ocr: true
+      translate: true
   moderation:
-    enabled: false
+    enabled: true
     commands:
-      actions: false # cogs/moderation/actions.py
+      actions: true
   logging:
     enabled: true
     commands:
-      events: true   # cogs/logging/events.py
-      settings: true # cogs/logging/settings.py
+      events: true
+  config:
+    enabled: true
+    commands:
+      core: true
