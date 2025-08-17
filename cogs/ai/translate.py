@@ -21,7 +21,7 @@ class TranslateCog(commands.Cog):
         self.bot = bot
         self.container = self.bot.container
         self.ai_service = self.container.ai_service
-        self.config_loader = self.config_loader
+        self.config_loader = self.container.config_loader
 
     @commands.slash_command(
         name="translate",
