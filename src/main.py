@@ -69,8 +69,7 @@ def load_cogs():
         else:
             print(f"  - Skipping disabled cog category: {category_name}")
 
-async def main():
-    """Main function to run the bot."""
+if __name__ == "__main__":
     load_cogs()
     
     bot_token = bot.container.config_loader.config.token
@@ -78,21 +77,12 @@ async def main():
     if bot_token == "YOUR_DISCORD_BOT_TOKEN":
         print("\n!!! BOT TOKEN IS NOT SET !!!")
         print("Please open 'configs/config.yaml' and replace 'YOUR_DISCORD_BOT_TOKEN' with your actual bot token.")
-        return
-
-    # Using try/finally to ensure bot.close() is called on exit.
-    try:
-        await bot.start(bot_token)
-    finally:
-        if not bot.is_closed():
-            print("Closing bot...")
-            await bot.close()
-
-if __name__ == "__main__":
-    # The asyncio.run() function automatically handles KeyboardInterrupt.
-    # When Ctrl+C is pressed, it will raise a CancelledError in the main task,
-    # which allows the 'finally' block in main() to execute.
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        print("Bot shutdown finalized.")
+    else:
+        try:
+            # bot.run() handles the event loop, Ctrl+C, and cleanup automatically.
+            bot.run(bot_token)
+        except discord.LoginFailure:
+            print("\n!!! LOGIN FAILED !!!")
+            print("The provided bot token is invalid. Please check 'configs/config.yaml'.")
+        except Exception as e:
+            print(f"\nAn unexpected error occurred during runtime: {e}")
