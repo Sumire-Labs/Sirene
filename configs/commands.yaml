@@ -12,3 +12,9 @@ cogs:
       imagine: true
       ocr: true
       translate: true
+  moderation:
+    enabled: true
+    commands:
+      timeout: true
+      kick: true
+      ban: true
