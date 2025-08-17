@@ -13,6 +13,7 @@ __pycache__/
 # Sensitive config file
 # A template file (config.template.yaml) should be version-controlled instead.
 configs/config.yaml
+google-credentials.json
 
 # Database files
 *.sqlite
