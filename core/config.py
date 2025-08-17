@@ -17,9 +17,22 @@ class VertexAIConfig:
     credentials_json_path: str | None = None
 
 @dataclass
+class LoggingEventsConfig:
+    member_join_leave: bool
+    message_edit_delete: bool
+    role_changes: bool
+    raid_detection: bool
+
+@dataclass
+class LoggingConfig:
+    channel_id: int
+    events: LoggingEventsConfig
+
+@dataclass
 class Config:
     token: str
     vertex_ai: VertexAIConfig
+    logging: LoggingConfig
 
 # --- Type-safe data classes for commands.yaml ---
 
@@ -62,6 +75,8 @@ class ConfigLoader:
         data = self._load_yaml(self.config_path)
         vertex_ai_data = data.get('vertex_ai', {})
         models_data = vertex_ai_data.get('models', {})
+        logging_data = data.get('logging', {})
+        logging_events_data = logging_data.get('events', {})
 
         return Config(
             token=data.get('token', 'YOUR_DISCORD_BOT_TOKEN'),
@@ -70,8 +85,17 @@ class ConfigLoader:
                 location=vertex_ai_data.get('location', 'YOUR_GOOGLE_CLOUD_LOCATION'),
                 credentials_json_path=vertex_ai_data.get('credentials_json_path'),
                 models=AIModelsConfig(
-                    chat=models_data.get('chat', 'gemini-1.5-flash'),
-                    image=models_data.get('image', 'imagen-4')
+                    chat=models_data.get('chat', 'gemini-2.5-flash-lite'),
+                    image=models_data.get('image', 'imagen-4.0-fast-generate-preview-06-06')
+                )
+            ),
+            logging=LoggingConfig(
+                channel_id=logging_data.get('channel_id', 0),
+                events=LoggingEventsConfig(
+                    member_join_leave=logging_events_data.get('member_join_leave', False),
+                    message_edit_delete=logging_events_data.get('message_edit_delete', False),
+                    role_changes=logging_events_data.get('role_changes', False),
+                    raid_detection=logging_events_data.get('raid_detection', False)
                 )
             )
         )
