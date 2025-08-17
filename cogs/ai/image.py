@@ -4,7 +4,7 @@ from discord.ui import View, Button, button, Item
 import io
 from typing import TYPE_CHECKING, Annotated
 
-from . import ai_group
+
 
 # Add the project root to the Python path
 import sys
@@ -103,7 +103,7 @@ class ImageCog(commands.Cog):
         
         view.message = message
 
-    @ai_group.command(
+    @commands.slash_command(
         name="imagine",
         description="AIに画像生成を依頼します。"
     )

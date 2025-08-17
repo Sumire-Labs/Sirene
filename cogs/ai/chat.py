@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from typing import TYPE_CHECKING, Annotated
 
-from . import ai_group
+
 
 # Add the project root to the Python path
 import sys
@@ -25,9 +25,7 @@ class ChatCog(commands.Cog):
         self.ai_service = self.container.ai_service
         self.config_loader = self.container.config_loader
 
-    # Using a command group for better organization
-
-    @ai_group.command(
+    @commands.slash_command(
         name="ask",
         description="AIに質問します。"
     )
