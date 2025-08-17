@@ -24,19 +24,18 @@ class LoggingConfigModal(Modal):
         self.db = db
         self.guild_id = guild_id
 
-        # Pre-fill with current settings
-        # This requires an async __init__ or a helper, so we'll do it in the callback for now.
         self.add_item(InputText(label="ログチャンネルID", placeholder="ログを投稿したいチャンネルのIDを入力...", required=False))
-        self.add_item(InputText(label="ロギングの有効/無効", placeholder="true または false を入力", required=False))
+        self.add_item(InputText(label="ロギング全体の有効/無効", placeholder="true または false を入力", required=False))
+        self.add_item(InputText(label="レイド検知の有効/無効", placeholder="true または false を入力", required=False))
 
     async def callback(self, interaction: discord.Interaction):
         channel_id_str = self.children[0].value
-        enabled_str = self.children[1].value
+        logging_enabled_str = self.children[1].value
+        raid_enabled_str = self.children[2].value
         
         response_parts = []
         error_parts = []
 
-        # --- Validate and update channel ID ---
         if channel_id_str:
             try:
                 channel_id = int(channel_id_str)
@@ -49,30 +48,63 @@ class LoggingConfigModal(Modal):
             except ValueError:
                 error_parts.append("チャンネルIDは数字で入力してください。")
 
-        # --- Validate and update enabled status ---
-        if enabled_str:
-            if enabled_str.lower() in ["true", "t", "yes", "y", "1"]:
-                enabled = True
-                await self.db.set_logging_status(self.guild_id, enabled)
-                response_parts.append(f"ロギングを **有効** にしました。")
-            elif enabled_str.lower() in ["false", "f", "no", "n", "0"]:
-                enabled = False
-                await self.db.set_logging_status(self.guild_id, enabled)
-                response_parts.append(f"ロギングを **無効** にしました。")
+        if logging_enabled_str:
+            if logging_enabled_str.lower() in ["true", "t", "yes", "y", "1"]:
+                await self.db.set_logging_status(self.guild_id, True)
+                response_parts.append(f"ロギング全体を **有効** にしました。")
+            elif logging_enabled_str.lower() in ["false", "f", "no", "n", "0"]:
+                await self.db.set_logging_status(self.guild_id, False)
+                response_parts.append(f"ロギング全体を **無効** にしました。")
             else:
-                error_parts.append("有効/無効の値は true または false で入力してください。")
+                error_parts.append("ロギング全体の有効/無効は true または false で入力してください。")
 
-        # --- Send response ---
+        if raid_enabled_str:
+            if raid_enabled_str.lower() in ["true", "t", "yes", "y", "1"]:
+                await self.db.set_raid_detection_status(self.guild_id, True)
+                response_parts.append(f"レイド検知を **有効** にしました。")
+            elif raid_enabled_str.lower() in ["false", "f", "no", "n", "0"]:
+                await self.db.set_raid_detection_status(self.guild_id, False)
+                response_parts.append(f"レイド検知を **無効** にしました。")
+            else:
+                error_parts.append("レイド検知の有効/無効は true または false で入力してください。")
+
         if error_parts:
-            embed = embed_factory.error("設定エラー", "\n".join(error_parts))
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed_factory.error("設定エラー", "\n".join(error_parts)), ephemeral=True)
         elif response_parts:
-            embed = embed_factory.success("ロギング設定を更新しました", "\n".join(response_parts))
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed_factory.success("ロギング設定を更新しました", "\n".join(response_parts)), ephemeral=True)
         else:
-            # No input was given
             await interaction.response.send_message("何も変更されませんでした。", ephemeral=True)
 
+
+class TicketConfigModal(Modal):
+    def __init__(self, bot: "MyBot", db, guild_id: int, *args, **kwargs) -> None:
+        super().__init__(title="チケット設定", *args, **kwargs)
+        self.bot = bot
+        self.db = db
+        self.guild_id = guild_id
+
+        self.add_item(InputText(label="チケットパネルを設置するチャンネルID", required=False))
+        self.add_item(InputText(label="チケットが作成されるカテゴリID", required=False))
+        self.add_item(InputText(label="チケット対応スタッフのロールID", required=False))
+
+    async def callback(self, interaction: discord.Interaction):
+        # For simplicity, we'll just save the raw IDs. Validation could be more robust.
+        panel_id_str = self.children[0].value
+        cat_id_str = self.children[1].value
+        role_id_str = self.children[2].value
+
+        try:
+            panel_id = int(panel_id_str) if panel_id_str else None
+            cat_id = int(cat_id_str) if cat_id_str else None
+            role_id = int(role_id_str) if role_id_str else None
+
+            await self.db.set_ticket_config(self.guild_id, panel_id, cat_id, role_id)
+            embed = embed_factory.success("チケット設定を更新しました", "設定がデータベースに保存されました。")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        except ValueError:
+            embed = embed_factory.error("設定エラー", "IDはすべて数字で入力してください。")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # --- Views for configuration ---
 
@@ -87,9 +119,10 @@ class ConfigSelectionView(View):
         modal = LoggingConfigModal(self.bot, self.db, interaction.guild.id)
         await interaction.response.send_modal(modal)
 
-    # @button(label="チケット設定", style=discord.ButtonStyle.secondary, emoji="🎟️")
-    # async def ticket_button_callback(self, button: Button, interaction: discord.Interaction):
-    #     await interaction.response.send_message("チケット設定は現在開発中です。", ephemeral=True)
+    @button(label="チケット設定", style=discord.ButtonStyle.secondary, emoji="🎟️")
+    async def ticket_button_callback(self, button: Button, interaction: discord.Interaction):
+        modal = TicketConfigModal(self.bot, self.db, interaction.guild.id)
+        await interaction.response.send_modal(modal)
 
 # --- Cog with the /config command ---
 
@@ -98,8 +131,6 @@ class ConfigCog(commands.Cog, name="Config"):
 
     def __init__(self, bot: "MyBot"):
         self.bot = bot
-        self.container = self.bot.container
-        self.db = self.container.db
 
     @commands.slash_command(
         name="config",

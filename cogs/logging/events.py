@@ -26,20 +26,20 @@ class LoggingCog(commands.Cog):
     async def get_log_settings(self, guild_id: int) -> tuple[discord.TextChannel | None, bool]:
         """Helper to get the log channel and enabled status for a guild."""
         settings = await self.db.get_guild_settings(guild_id)
-        if not settings:
-            return (None, False)
 
-        channel_id, enabled = settings
-        if not enabled:
+        if not settings:
+            return (None, True) # Defaults: no channel, but logging is conceptually on
+
+        if not settings.logging_enabled:
             return (None, False)
 
         channel = None
-        if channel_id:
-            channel = self.bot.get_channel(channel_id)
+        if settings.log_channel_id:
+            channel = self.bot.get_channel(settings.log_channel_id)
             if not isinstance(channel, discord.TextChannel):
                 channel = None
         
-        return channel, enabled
+        return channel, True
 
     # --- Member Join/Leave Events ---
     @commands.Cog.listener()
