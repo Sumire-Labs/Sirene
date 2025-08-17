@@ -34,8 +34,7 @@ class TranslateCog(commands.Cog):
         target_language: Annotated[
             str,
             discord.Option(
-                description="翻訳先の言語",
-                choices=["日本語", "英語", "中国語", "韓国語", "スペイン語", "フランス語", "ドイツ語"],
+                description="翻訳先の言語（例: 英語、中国語）",
                 required=True
             )
         ],
