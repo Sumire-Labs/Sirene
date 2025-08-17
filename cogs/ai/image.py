@@ -4,15 +4,19 @@ from discord.ui import View, Button, button, Item
 import io
 from typing import TYPE_CHECKING, Annotated
 
-from core.di import container
-
 # Add the project root to the Python path
 import sys
 from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 
+from core.di import container
+from utils.embeds import embed_factory
 
+if TYPE_CHECKING:
+    from src.main import MyBot
+
+# --- Action View for Image Generation ---
 
 class ImageActionView(View):
     def __init__(self, image_cog: "ImageCog", prompt: str):
@@ -69,7 +73,7 @@ class ImageCog(commands.Cog):
 
         image_stream = image_data[0]
         image_stream.seek(0)
-        d_file = discord.File(image_stream, filename="generated_image.png")
+        d_file = discord.File(image_stream, filename="generated_image.png")  # type: ignore
         
         author = interaction.user
         author_name = author.display_name if author else "Unknown User"
