@@ -3,6 +3,7 @@ from vertexai.generative_models import GenerativeModel
 from vertexai.preview.vision_models import ImageGenerationModel
 from google.oauth2 import service_account
 import io
+import time
 
 # Add the project root to the Python path
 import sys
@@ -41,7 +42,10 @@ class AIService:
                 location=self.config.location,
                 credentials=credentials
             )
-            self.chat_model = GenerativeModel(self.config.models.chat)
+            self.chat_model = GenerativeModel(
+                self.config.models.chat,
+                system_instruction="あなたは『Sirene AI』という名前の、高性能なAIアシスタントです。ユーザーの質問に対して、親切かつ的確に回答してください。"
+            )
             self.image_model = ImageGenerationModel.from_pretrained(self.config.models.image)
             self.initialized = True
             print("Vertex AI Service initialized successfully.")
@@ -78,5 +82,18 @@ class AIService:
         except Exception as e:
             print(f"[ERROR] Vertex AI (Image): {e}")
             return f"An error occurred while generating the image: {e}"
+
+    async def ping(self) -> float:
+        """Measures the AI API latency and returns it in milliseconds."""
+        if not self.initialized or not self.chat_model:
+            return -1.0
+        
+        start_time = time.monotonic()
+        try:
+            await self.chat_model.count_tokens_async("ping")
+        except Exception:
+            return -1.0
+        end_time = time.monotonic()
+        return (end_time - start_time) * 1000
 
 # Note: The singleton instance is removed. Instantiation is now handled by the DI container.

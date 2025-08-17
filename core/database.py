@@ -1,5 +1,6 @@
 import aiosqlite
 from pathlib import Path
+import time
 
 # Define the path to the database file
 DB_FILE = Path("data.sqlite3")
@@ -46,6 +47,18 @@ class Database:
         await self.conn.commit()
         await cursor.close()
         print("Database tables checked/created.")
+
+    async def ping(self) -> float:
+        """Measures the database query latency and returns it in milliseconds."""
+        if not self.conn:
+            return -1.0
+        
+        start_time = time.monotonic()
+        async with self.conn.execute("SELECT 1") as cursor:
+            await cursor.fetchone()
+        end_time = time.monotonic()
+        # Return latency in milliseconds
+        return (end_time - start_time) * 1000
 
 
 # --- Singleton instance ---

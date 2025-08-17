@@ -34,7 +34,7 @@ class ChatCog(commands.Cog):
     async def ask(
         self, 
         ctx: discord.ApplicationContext,
-        prompt: Annotated[str, discord.Option(description="The question you want to ask.", required=True)]
+        prompt: Annotated[str, discord.Option(description="AIへの質問内容", required=True)]
     ):
         """Handles the /ai ask command."""
         # Check if the command is enabled in commands.yaml
@@ -56,6 +56,7 @@ class ChatCog(commands.Cog):
         )
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
         embed.add_field(name="Original Prompt", value=f"```\n{prompt[:1000]}\n```", inline=False)
+        embed.set_footer(text="Powered by Sirene AI", icon_url=self.bot.user.display_avatar.url)
 
         await ctx.followup.send(embed=embed)
 

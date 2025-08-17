@@ -30,12 +30,12 @@ class ImageCog(commands.Cog):
 
     @ai_group.command(
         name="imagine",
-        description="Generate an image from a text prompt using AI."
+        description="AIに画像生成を依頼します。"
     )
     async def imagine(
         self,
         ctx: discord.ApplicationContext,
-        prompt: Annotated[str, discord.Option(description="Describe the image you want to create.", required=True)]
+        prompt: Annotated[str, discord.Option(description="生成したい画像の説明（プロンプト）", required=True)]
     ):
         """Handles the /ai imagine command."""
         # Check if the command is enabled
