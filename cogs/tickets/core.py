@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from src.main import MyBot
 
 class TicketCoreCog(commands.Cog):
-    """Core logic for ticket creation and management."""
 
     def __init__(self, bot: "MyBot"):
         self.bot = bot
