@@ -44,6 +44,13 @@ class Database:
                 timestamp DATETIME NOT NULL
             )
         """)
+
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS guild_settings (
+                guild_id INTEGER PRIMARY KEY,
+                log_channel_id INTEGER
+            )
+        """)
         await self.conn.commit()
         await cursor.close()
         print("Database tables checked/created.")
@@ -59,6 +66,27 @@ class Database:
         end_time = time.monotonic()
         # Return latency in milliseconds
         return (end_time - start_time) * 1000
+
+    async def set_log_channel(self, guild_id: int, channel_id: int | None):
+        """Sets or clears the log channel for a specific guild."""
+        if not self.conn:
+            return
+        await self.conn.execute(
+            "INSERT OR REPLACE INTO guild_settings (guild_id, log_channel_id) VALUES (?, ?)",
+            (guild_id, channel_id)
+        )
+        await self.conn.commit()
+
+    async def get_log_channel(self, guild_id: int) -> int | None:
+        """Gets the log channel ID for a specific guild."""
+        if not self.conn:
+            return None
+        async with self.conn.execute(
+            "SELECT log_channel_id FROM guild_settings WHERE guild_id = ?",
+            (guild_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else None
 
 
 # --- Singleton instance ---

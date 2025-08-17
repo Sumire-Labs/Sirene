@@ -1,23 +1,21 @@
-# Enable or disable cogs and commands
-# Cogs are modules that group commands. Disabling a cog disables all its commands.
 cogs:
   general:
     enabled: true
     commands:
-      ping: true
+      ping: true # cogs/general/ping.py
   ai:
     enabled: true
     commands:
-      ask: true
-      imagine: true
-      ocr: true
-      translate: true
+      chat: true      # cogs/ai/chat.py
+      image: true     # cogs/ai/image.py
+      ocr: true       # cogs/ai/ocr.py
+      translate: true # cogs/ai/translate.py
   moderation:
     enabled: false
     commands:
-      timeout: false
-      kick: false
-      ban: false
+      actions: false # cogs/moderation/actions.py
   logging:
     enabled: true
-    commands: {}
+    commands:
+      events: true   # cogs/logging/events.py
+      settings: true # cogs/logging/settings.py

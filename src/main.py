@@ -48,26 +48,31 @@ def load_cogs():
     """Loads enabled cogs from subdirectories based on commands.yaml."""
     print("Loading cogs...")
     cogs_config = bot.container.config_loader.commands.cogs
-    cogs_dir = project_root / "cogs"
 
     for category_name, category_config in cogs_config.items():
         if category_config.enabled:
-            category_dir = cogs_dir / category_name
+            category_dir = project_root / "cogs" / category_name
             if not category_dir.is_dir():
                 print(f"  - [WARNING] Cog category '{category_name}' is enabled but directory 'cogs/{category_name}' not found.")
                 continue
 
             print(f"  - Loading category: {category_name}")
-            for cog_file in category_dir.glob("*.py"):
-                if cog_file.stem == "__init__":
+            for cog_module_name, is_enabled in category_config.commands.items():
+                if not is_enabled:
+                    print(f"    - Skipping disabled cog module: {cog_module_name}")
                     continue
                 
-                cog_path = f"cogs.{category_name}.{cog_file.stem}"
+                cog_file_path = category_dir / f"{cog_module_name}.py"
+                if not cog_file_path.exists():
+                    print(f"    - [WARNING] Cog module file not found for '{cog_module_name}'.")
+                    continue
+
+                cog_path = f"cogs.{category_name}.{cog_module_name}"
                 try:
                     bot.load_extension(cog_path)
-                    print(f"    - Successfully loaded cog module: {cog_file.stem}")
+                    print(f"    - Successfully loaded cog module: {cog_module_name}")
                 except Exception as e:
-                    print(f"    - [ERROR] Failed to load cog module: {cog_file.stem}")
+                    print(f"    - [ERROR] Failed to load cog module: {cog_module_name}")
                     print(f"      Reason: {e}")
         else:
             print(f"  - Skipping disabled cog category: {category_name}")

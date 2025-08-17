@@ -25,7 +25,6 @@ class LoggingEventsConfig:
 
 @dataclass
 class LoggingConfig:
-    channel_id: int
     events: LoggingEventsConfig
 
 @dataclass
@@ -90,7 +89,6 @@ class ConfigLoader:
                 )
             ),
             logging=LoggingConfig(
-                channel_id=logging_data.get('channel_id', 0),
                 events=LoggingEventsConfig(
                     member_join_leave=logging_events_data.get('member_join_leave', False),
                     message_edit_delete=logging_events_data.get('message_edit_delete', False),
