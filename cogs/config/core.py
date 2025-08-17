@@ -30,8 +30,51 @@ class LoggingConfigModal(Modal):
         self.add_item(InputText(label="レイド検知の有効/無効", placeholder="true または false を入力", required=False))
 
     async def callback(self, interaction: discord.Interaction):
-        # ... (omitted for brevity, no changes here)
-        pass # This callback logic is complex and correct, so we'll trust it.
+        channel_id_str = self.children[0].value
+        logging_enabled_str = self.children[1].value
+        raid_enabled_str = self.children[2].value
+        
+        response_parts = []
+        error_parts = []
+
+        if channel_id_str:
+            try:
+                channel_id = int(channel_id_str)
+                channel = self.bot.get_channel(channel_id)
+                if not channel or not isinstance(channel, discord.TextChannel) or not channel.guild or channel.guild.id != self.guild_id:
+                    error_parts.append(f"無効なチャンネルIDです。このサーバーに存在するテキストチャンネルのIDを入力してください。")
+                else:
+                    await self.db.set_log_channel(self.guild_id, channel.id)
+                    response_parts.append(f"ログチャンネルを {channel.mention} に設定しました。")
+            except ValueError:
+                error_parts.append("チャンネルIDは数字で入力してください。")
+
+        if logging_enabled_str:
+            if logging_enabled_str.lower() in ["true", "t", "yes", "y", "1"]:
+                await self.db.set_logging_status(self.guild_id, True)
+                response_parts.append(f"ロギング全体を **有効** にしました。")
+            elif logging_enabled_str.lower() in ["false", "f", "no", "n", "0"]:
+                await self.db.set_logging_status(self.guild_id, False)
+                response_parts.append(f"ロギング全体を **無効** にしました。")
+            else:
+                error_parts.append("ロギング全体の有効/無効は true または false で入力してください。")
+
+        if raid_enabled_str:
+            if raid_enabled_str.lower() in ["true", "t", "yes", "y", "1"]:
+                await self.db.set_raid_detection_status(self.guild_id, True)
+                response_parts.append(f"レイド検知を **有効** にしました。")
+            elif raid_enabled_str.lower() in ["false", "f", "no", "n", "0"]:
+                await self.db.set_raid_detection_status(self.guild_id, False)
+                response_parts.append(f"レイド検知を **無効** にしました。")
+            else:
+                error_parts.append("レイド検知の有効/無効は true または false で入力してください。")
+
+        if error_parts:
+            await interaction.response.send_message(embed=embed_factory.error("設定エラー", "\n".join(error_parts)), ephemeral=True)
+        elif response_parts:
+            await interaction.response.send_message(embed=embed_factory.success("ロギング設定を更新しました", "\n".join(response_parts)), ephemeral=True)
+        else:
+            await interaction.response.send_message("何も変更されませんでした。", ephemeral=True)
 
 class TicketConfigModal(Modal):
     def __init__(self, bot: "MyBot", db, guild_id: int, *args, **kwargs) -> None:
