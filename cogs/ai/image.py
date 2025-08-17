@@ -80,8 +80,9 @@ class ImageCog(commands.Cog):
             return
 
         # --- Success Case ---
-        # Pylance may complain here, but discord.File expects a file-like object, and BytesIO is one.
-        d_file = discord.File(io.BytesIO(image_data[0]), filename="generated_image.png") # type: ignore
+        image_stream = image_data[0]
+        image_stream.seek(0) # Reset stream position to the beginning
+        d_file = discord.File(image_stream, filename="generated_image.png")
         
         author = interaction.user
         embed = embed_factory.success(
