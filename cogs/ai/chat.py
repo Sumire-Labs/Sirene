@@ -56,7 +56,10 @@ class ChatCog(commands.Cog):
         )
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
         embed.add_field(name="Original Prompt", value=f"```\n{prompt[:1000]}\n```", inline=False)
-        embed.set_footer(text="Powered by Sirene AI", icon_url=self.bot.user.display_avatar.url)
+        if self.bot.user and self.bot.user.display_avatar:
+            embed.set_footer(text="Powered by Sirene AI", icon_url=self.bot.user.display_avatar.url)
+        else:
+            embed.set_footer(text="Powered by Sirene AI")
 
         await ctx.followup.send(embed=embed)
 
