@@ -13,9 +13,8 @@ cogs:
   logging:
     enabled: true
     commands:
-      events: true
-      raid: true
-      settings: true
+      events: true   # cogs/logging/events.py
+      raid: true     # cogs/logging/raid.py
   config:
     enabled: true
     commands:
@@ -23,5 +22,4 @@ cogs:
   tickets:
     enabled: true
     commands:
-      panel: true
       core: true
