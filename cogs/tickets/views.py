@@ -11,8 +11,8 @@ class TicketCreateView(View):
     async def create_ticket_callback(self, button: Button, interaction: discord.Interaction):
         """Callback for the create ticket button."""
         # We need to ensure the client is our custom bot class to access the cog.
-        bot = interaction.client
-        ticket_cog = bot.get_cog("TicketCore") # type: ignore
+        bot: "MyBot" = interaction.client # type: ignore
+        ticket_cog = bot.get_cog("TicketCore")
         if ticket_cog:
             await ticket_cog.create_ticket_channel(interaction)
         else:
