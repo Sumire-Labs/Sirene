@@ -13,11 +13,11 @@ cogs:
       ocr: true
       translate: true
   moderation:
-    enabled: true
+    enabled: false
     commands:
-      timeout: true
-      kick: true
-      ban: true
+      timeout: false
+      kick: false
+      ban: false
   logging:
     enabled: true
     commands: {}
