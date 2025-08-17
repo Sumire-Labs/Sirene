@@ -24,7 +24,7 @@ class PingCog(commands.Cog):
 
     @commands.slash_command(
         name="ping",
-        description="Checks the bot's latency."
+        description="BOTの応答速度などを測定します。"
     )
     async def ping(self, ctx: discord.ApplicationContext):
         """Responds with the bot's latency."""

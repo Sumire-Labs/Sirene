@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
-from discord.commands import SlashCommandGroup
 import io
 from typing import TYPE_CHECKING, Annotated
+
+from . import ai_group
 
 # Add the project root to the Python path
 import sys
@@ -26,7 +27,6 @@ class ImageCog(commands.Cog):
         self.config_loader = self.container.config_loader
 
     # Re-using the same group from chat.py works fine as long as one is loaded.
-    ai_group = SlashCommandGroup("ai", "Commands powered by AI.")
 
     @ai_group.command(
         name="imagine",

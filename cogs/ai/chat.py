@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
-from discord.commands import SlashCommandGroup
 from typing import TYPE_CHECKING, Annotated
+
+from . import ai_group
 
 # Add the project root to the Python path
 import sys
@@ -25,11 +26,10 @@ class ChatCog(commands.Cog):
         self.config_loader = self.container.config_loader
 
     # Using a command group for better organization
-    ai_group = SlashCommandGroup("ai", "Commands powered by AI.")
 
     @ai_group.command(
         name="ask",
-        description="Ask a question to the AI."
+        description="AIに質問します。"
     )
     async def ask(
         self, 

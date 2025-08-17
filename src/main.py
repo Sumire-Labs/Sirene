@@ -35,11 +35,14 @@ async def on_ready():
     print("UI Factory and services ready.")
     print("-------------------")
 
-@bot.event
-async def on_close():
-    """Called when the bot is shutting down."""
-    print("Bot is shutting down...")
-    await bot.container.close_services()
+# @bot.event
+# async def on_close():
+#     """Called when the bot is shutting down."""
+#     # This was causing the bot to hang on exit.
+#     # For SQLite, it's generally safe to just let the process exit
+#     # without explicitly closing the connection.
+#     print("Bot is shutting down...")
+#     await bot.container.close_services()
 
 def load_cogs():
     """Loads enabled cogs from subdirectories based on commands.yaml."""
