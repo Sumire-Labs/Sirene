@@ -11,7 +11,7 @@ sys.path.append(str(project_root))
 
 from core.di import container
 from utils.embeds import embed_factory
-from cogs.tickets.views import TicketCreateView # Import the panel view
+from cogs.tickets.views import TicketCreateView
 
 if TYPE_CHECKING:
     from src.main import MyBot
@@ -25,15 +25,15 @@ class LoggingConfigModal(Modal):
         self.bot = bot
         self.db = db
         self.guild_id = guild_id
-        self.add_item(InputText(label="ログチャンネルID", placeholder="ログを投稿したいチャンネルのIDを入力...", required=False))
-        self.add_item(InputText(label="ロギング全体の有効/無効", placeholder="true または false を入力", required=False))
-        self.add_item(InputText(label="レイド検知の有効/無効", placeholder="true または false を入力", required=False))
+        self.add_item(InputText(label="ログチャンネルID", placeholder="（空欄で変更しない）", required=False))
+        self.add_item(InputText(label="ロギング全体の有効/無効", placeholder="true / false（空欄で変更しない）", required=False))
+        self.add_item(InputText(label="レイド検知の有効/無効", placeholder="true / false（空欄で変更しない）", required=False))
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         channel_id_str = self.children[0].value
         logging_enabled_str = self.children[1].value
         raid_enabled_str = self.children[2].value
-        
         response_parts = []
         error_parts = []
 
@@ -42,7 +42,7 @@ class LoggingConfigModal(Modal):
                 channel_id = int(channel_id_str)
                 channel = self.bot.get_channel(channel_id)
                 if not channel or not isinstance(channel, discord.TextChannel) or not channel.guild or channel.guild.id != self.guild_id:
-                    error_parts.append(f"無効なチャンネルIDです。このサーバーに存在するテキストチャンネルのIDを入力してください。")
+                    error_parts.append(f"無効なチャンネルIDです。")
                 else:
                     await self.db.set_log_channel(self.guild_id, channel.id)
                     response_parts.append(f"ログチャンネルを {channel.mention} に設定しました。")
@@ -70,11 +70,11 @@ class LoggingConfigModal(Modal):
                 error_parts.append("レイド検知の有効/無効は true または false で入力してください。")
 
         if error_parts:
-            await interaction.response.send_message(embed=embed_factory.error("設定エラー", "\n".join(error_parts)), ephemeral=True)
+            await interaction.followup.send(embed=embed_factory.error("設定エラー", "\n".join(error_parts)), ephemeral=True)
         elif response_parts:
-            await interaction.response.send_message(embed=embed_factory.success("ロギング設定を更新しました", "\n".join(response_parts)), ephemeral=True)
+            await interaction.followup.send(embed=embed_factory.success("ロギング設定を更新しました", "\n".join(response_parts)), ephemeral=True)
         else:
-            await interaction.response.send_message("何も変更されませんでした。", ephemeral=True)
+            await interaction.followup.send("何も変更されませんでした。", ephemeral=True)
 
 class TicketConfigModal(Modal):
     def __init__(self, bot: "MyBot", db, guild_id: int, *args, **kwargs) -> None:
@@ -82,15 +82,39 @@ class TicketConfigModal(Modal):
         self.bot = bot
         self.db = db
         self.guild_id = guild_id
-        self.add_item(InputText(label="チケットパネル用チャンネルID", required=False))
-        self.add_item(InputText(label="チケットが作成されるカテゴリID", required=False))
-        self.add_item(InputText(label="チケット対応スタッフのロールID", required=False))
+        self.add_item(InputText(label="チケットパネル用チャンネルID", placeholder="（空欄で変更しない）", required=False))
+        self.add_item(InputText(label="チケット作成先カテゴリID", placeholder="（空欄で変更しない）", required=False))
+        self.add_item(InputText(label="チケット対応スタッフのロールID", placeholder="（空欄で変更しない）", required=False))
 
     async def callback(self, interaction: discord.Interaction):
-        # ... (omitted for brevity, no changes here)
-        pass # This callback logic is complex and correct, so we'll trust it.
+        await interaction.response.defer(ephemeral=True)
+        panel_id_str = self.children[0].value
+        cat_id_str = self.children[1].value
+        role_id_str = self.children[2].value
+        try:
+            # We only update the values that are actually provided.
+            if panel_id_str: await self.db.set_ticket_config(self.guild_id, panel_channel_id=int(panel_id_str))
+            if cat_id_str: await self.db.set_ticket_config(self.guild_id, category_id=int(cat_id_str))
+            if role_id_str: await self.db.set_ticket_config(self.guild_id, staff_role_id=int(role_id_str))
+            embed = embed_factory.success("チケット設定を更新しました", "設定がデータベースに保存されました。")
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        except ValueError:
+            embed = embed_factory.error("設定エラー", "IDはすべて数字で入力してください。")
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
-# --- Views for configuration ---
+# --- Action Views ---
+
+class LoggingActionView(View):
+    def __init__(self, bot: "MyBot"):
+        super().__init__(timeout=180)
+        self.bot = bot
+
+    @button(label="設定を編集", style=discord.ButtonStyle.primary, emoji="✏️")
+    async def edit_config_callback(self, button: Button, interaction: discord.Interaction):
+        if not interaction.guild_id:
+            return await interaction.response.send_message("エラー: サーバー情報が取得できません。", ephemeral=True)
+        modal = LoggingConfigModal(self.bot, self.bot.container.db, interaction.guild_id)
+        await interaction.response.send_modal(modal)
 
 class TicketActionView(View):
     def __init__(self, bot: "MyBot"):
@@ -99,6 +123,8 @@ class TicketActionView(View):
 
     @button(label="このチャンネルにパネルを設置", style=discord.ButtonStyle.success, emoji="➕")
     async def create_panel_callback(self, button: Button, interaction: discord.Interaction):
+        if not isinstance(interaction.channel, discord.TextChannel):
+            return await interaction.response.send_message("テキストチャンネルでのみ実行できます。", ephemeral=True)
         embed = embed_factory.info(
             title="サポートチケット",
             description="サーバーに関する質問や、ユーザーへの報告などはこちらからチケットを作成してください。\n下のボタンを押すと、あなた専用のプライベートチャンネルが作成されます。"
@@ -109,11 +135,12 @@ class TicketActionView(View):
 
     @button(label="設定を編集", style=discord.ButtonStyle.primary, emoji="✏️")
     async def edit_config_callback(self, button: Button, interaction: discord.Interaction):
-        if not interaction.guild:
-            await interaction.response.send_message("この操作はサーバー内でのみ実行できます。", ephemeral=True)
-            return
-        modal = TicketConfigModal(self.bot, self.bot.container.db, interaction.guild.id)
+        if not interaction.guild_id:
+            return await interaction.response.send_message("エラー: サーバー情報が取得できません。", ephemeral=True)
+        modal = TicketConfigModal(self.bot, self.bot.container.db, interaction.guild_id)
         await interaction.response.send_modal(modal)
+
+# --- Main Selection View ---
 
 class ConfigSelectionView(View):
     def __init__(self, bot: "MyBot"):
@@ -121,43 +148,70 @@ class ConfigSelectionView(View):
         self.bot = bot
         self.db = self.bot.container.db
 
+    async def get_settings_embed(self, guild: discord.Guild) -> tuple[discord.Embed, View]:
+        settings = await self.db.get_guild_settings(guild.id)
+        if not settings:
+            # Create default settings if none exist
+            await self.db.set_log_channel(guild.id, None) # This creates a row
+            settings = await self.db.get_guild_settings(guild.id)
+
+        # Logging Embed
+        log_status = "有効" if settings.logging_enabled else "無効"
+        raid_status = "有効" if settings.raid_detection_enabled else "無効"
+        log_ch_obj = self.bot.get_channel(settings.log_channel_id) if settings.log_channel_id else None
+        log_ch = log_ch_obj.mention if log_ch_obj else "未設定"
+        logging_embed = embed_factory.info("ロギング設定", f"**全体:** `{log_status}` | **レイド検知:** `{raid_status}`\n**チャンネル:** {log_ch}")
+        logging_view = LoggingActionView(self.bot)
+
+        # Ticket Embed
+        panel_ch_obj = self.bot.get_channel(settings.ticket_panel_channel_id) if settings.ticket_panel_channel_id else None
+        cat_ch_obj = self.bot.get_channel(settings.ticket_category_id) if settings.ticket_category_id else None
+        staff_role_obj = guild.get_role(settings.ticket_staff_role_id) if settings.ticket_staff_role_id else None
+        panel_ch = panel_ch_obj.mention if panel_ch_obj else "未設定"
+        cat_ch = f"`{cat_ch_obj.name}`" if cat_ch_obj else "未設定"
+        staff_role = staff_role_obj.mention if staff_role_obj else "未設定"
+        ticket_embed = embed_factory.info("チケット設定", f"**パネルチャンネル:** {panel_ch}\n**作成先カテゴリ:** {cat_ch}\n**スタッフロール:** {staff_role}")
+        ticket_view = TicketActionView(self.bot)
+
+        return logging_embed, logging_view, ticket_embed, ticket_view
+
     @button(label="ロギング設定", style=discord.ButtonStyle.secondary, emoji="📜")
     async def logging_button_callback(self, button: Button, interaction: discord.Interaction):
         if not interaction.guild:
-            await interaction.response.send_message("この操作はサーバー内でのみ実行できます。", ephemeral=True)
-            return
-        modal = LoggingConfigModal(self.bot, self.db, interaction.guild.id)
-        await interaction.response.send_modal(modal)
+            return await interaction.response.send_message("エラー: サーバー情報が取得できません。", ephemeral=True)
+        
+        settings = await self.db.get_guild_settings(interaction.guild.id)
+        if not settings:
+            await self.db.set_log_channel(interaction.guild.id, None)
+            settings = await self.db.get_guild_settings(interaction.guild.id)
+
+        log_status = "有効" if settings.logging_enabled else "無効"
+        raid_status = "有効" if settings.raid_detection_enabled else "無効"
+        log_ch_obj = self.bot.get_channel(settings.log_channel_id) if settings.log_channel_id else None
+        log_ch = log_ch_obj.mention if log_ch_obj else "未設定"
+        
+        embed = embed_factory.info("ロギング設定", f"**全体:** `{log_status}` | **レイド検知:** `{raid_status}`\n**チャンネル:** {log_ch}")
+        view = LoggingActionView(self.bot)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @button(label="チケット設定", style=discord.ButtonStyle.secondary, emoji="🎟️")
     async def ticket_button_callback(self, button: Button, interaction: discord.Interaction):
         if not interaction.guild:
-            await interaction.response.send_message("この操作はサーバー内でのみ実行できます。", ephemeral=True)
-            return
-        
-        await interaction.response.defer(ephemeral=True)
+            return await interaction.response.send_message("エラー: サーバー情報が取得できません。", ephemeral=True)
         
         settings = await self.db.get_guild_settings(interaction.guild.id)
-        
-        def get_name(entity_id, entity_type):
-            if not entity_id: return "未設定"
-            entity = self.bot.get_channel(entity_id) if entity_type == 'channel' else self.bot.get_guild(interaction.guild.id).get_role(entity_id)
-            return f"`{{entity.name}}`" if entity else "不明 (ID: `{entity_id}`)"
+        if not settings:
+            await self.db.set_ticket_config(interaction.guild.id, None, None, None)
+            settings = await self.db.get_guild_settings(interaction.guild.id)
 
-        panel_ch = get_name(settings.ticket_panel_channel_id if settings else None, 'channel')
-        cat_ch = get_name(settings.ticket_category_id if settings else None, 'channel')
-        staff_role = get_name(settings.ticket_staff_role_id if settings else None, 'role')
+        cat_ch_obj = self.bot.get_channel(settings.ticket_category_id) if settings.ticket_category_id else None
+        staff_role_obj = interaction.guild.get_role(settings.ticket_staff_role_id) if settings.ticket_staff_role_id else None
+        cat_ch = f"`{cat_ch_obj.name}`" if cat_ch_obj else "未設定"
+        staff_role = staff_role_obj.mention if staff_role_obj else "未設定"
 
-        embed = embed_factory.info(
-            title="チケット設定",
-            description=f"現在の設定は以下の通りです。"
-        )
-        embed.add_field(name="パネルチャンネル", value=panel_ch, inline=False)
-        embed.add_field(name="作成先カテゴリ", value=cat_ch, inline=False)
-        embed.add_field(name="スタッフロール", value=staff_role, inline=False)
-
+        embed = embed_factory.info("チケット設定", f"**作成先カテゴリ:** {cat_ch}\n**スタッフロール:** {staff_role}")
         view = TicketActionView(self.bot)
-        await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 # --- Cog with the /config command ---
 
@@ -179,7 +233,6 @@ class ConfigCog(commands.Cog):
         )
         view = ConfigSelectionView(self.bot)
         await ctx.respond(embed=embed, view=view, ephemeral=True)
-
 
 def setup(bot: "MyBot"):
     """The setup function for the cog."""
