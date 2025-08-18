@@ -203,6 +203,8 @@ class ConfigSelectionView(View):
 # --- Cog with the /config command ---
 
 class ConfigCog(commands.Cog):
+    def __init__(self, bot: "MyBot"):
+        self.bot = bot
 
     @commands.slash_command(name="config", description="BOTの各種機能設定を行います。")
     @commands.has_permissions(manage_guild=True)
