@@ -33,20 +33,20 @@ class OcrCog(commands.Cog):
         image: Annotated[discord.Attachment, discord.Option(description="読み取りたい画像ファイル", required=True)]
     ):
         """Reads text from an image attachment."""
+        await ctx.defer()
+
         # Check if the command is enabled in commands.yaml
         command_config = self.config_loader.commands.cogs["ai"].commands
         if not command_config or not command_config.get("ocr", True): # Default to True if not specified
-            await ctx.respond(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。"),
+            await ctx.followup.send(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。"),
                                 ephemeral=True)
             return
 
         # Validate attachment type
         if not image.content_type or not image.content_type.startswith("image/"):
-            await ctx.respond(embed=embed_factory.error("無効なファイル形式", "画像ファイル（PNG, JPGなど）をアップロードしてください。"),
+            await ctx.followup.send(embed=embed_factory.error("無効なファイル形式", "画像ファイル（PNG, JPGなど）をアップロードしてください。"),
                                 ephemeral=True)
             return
-
-        await ctx.defer()
 
         try:
             image_bytes = await image.read()

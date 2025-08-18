@@ -27,14 +27,13 @@ class PingCog(commands.Cog):
     )
     async def ping(self, ctx: discord.ApplicationContext):
         """Measures and displays the latency to Discord, the DB, and the AI service."""
+        await ctx.defer()
+
         # Check if the command is enabled
         ping_enabled = self.container.config_loader.commands.cogs["general"].commands.get("ping", True)
         if not ping_enabled:
-            await ctx.respond(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。"), ephemeral=True)
+            await ctx.followup.send(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。"), ephemeral=True)
             return
-
-        # Acknowledge the command and show a "thinking" state
-        await ctx.defer()
 
         # Get Discord API latency
         discord_latency = round(self.bot.latency * 1000)

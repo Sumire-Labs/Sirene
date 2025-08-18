@@ -109,7 +109,7 @@ class ImageCog(commands.Cog):
 
         command_config = self.config_loader.commands.cogs["ai"].commands
         if not command_config or not command_config.get("image", False):
-            await ctx.respond(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。"), ephemeral=True)
+            await ctx.followup.send(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。w"), ephemeral=True)
             return
 
         await self.generate_and_respond(ctx, prompt, is_regenerate=False)

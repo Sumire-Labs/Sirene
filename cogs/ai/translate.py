@@ -47,12 +47,12 @@ class TranslateCog(commands.Cog):
         ]
     ):
         """Translates text into another language."""
+        await ctx.defer()
+
         command_config = self.config_loader.commands.cogs["ai"].commands
         if not command_config or not command_config.get("translate", True):
-            await ctx.respond(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。" ), ephemeral=True)
+            await ctx.followup.send(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。" ), ephemeral=True)
             return
-
-        await ctx.defer()
 
         translated_text = await self.ai_service.translate_text(
             text=text,

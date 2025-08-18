@@ -222,12 +222,13 @@ class ConfigCog(commands.Cog):
     @commands.slash_command(name="config", description="BOTの各種機能設定を行います。")
     @commands.has_permissions(manage_guild=True)
     async def config(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
         embed = embed_factory.default(
             title="⚙️ BOT機能設定",
             description="設定したい機能のボタンを押してください。"
         )
         view = ConfigSelectionView(self.bot)
-        await ctx.respond(embed=embed, view=view, ephemeral=True)
+        await ctx.followup.send(embed=embed, view=view, ephemeral=True)
 
 def setup(bot: "MyBot"):
     bot.add_cog(ConfigCog(bot))
