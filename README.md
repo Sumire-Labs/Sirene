@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  Sirene Discord Bot
+  Sirene - Version 0.1.0
   <br>
 </h1>
 
