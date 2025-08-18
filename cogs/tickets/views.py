@@ -1,6 +1,7 @@
 import discord
 from discord.ui import View, Button, button, Modal, InputText
 from typing import TYPE_CHECKING
+import datetime
 
 # Add the project root to the Python path
 import sys
@@ -59,8 +60,15 @@ class TicketCreateModal(Modal):
 
         await self.db.create_ticket(ticket_channel.id, guild.id, user.id)
 
-        initial_message_embed = embed_factory.info(f"チケット: {subject}", content)
+        # Send user's original inquiry as the first message
+        initial_message_embed = discord.Embed(
+            title=subject,
+            description=content,
+            color=discord.Color.green(),
+            timestamp=datetime.datetime.utcnow()
+        )
         initial_message_embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
+        initial_message_embed.set_footer(text=f"Ticket #{ticket_number:04d}")
         await ticket_channel.send(f"{user.mention} {staff_role.mention}", embed=initial_message_embed)
 
         await interaction.followup.send(f"チケットチャンネル {ticket_channel.mention} を作成しました。", ephemeral=True)
