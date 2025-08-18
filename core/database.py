@@ -16,6 +16,7 @@ class GuildSettings:
     ticket_category_id: int | None
     ticket_staff_role_id: int | None
     raid_detection_enabled: bool
+    ticket_counter: int
 
 class Database:
     """Handles the connection to the SQLite database."""
@@ -60,7 +61,8 @@ class Database:
                 ticket_panel_channel_id INTEGER,
                 ticket_category_id INTEGER,
                 ticket_staff_role_id INTEGER,
-                raid_detection_enabled BOOLEAN DEFAULT TRUE
+                raid_detection_enabled BOOLEAN DEFAULT TRUE,
+                ticket_counter INTEGER NOT NULL DEFAULT 1
             )
         """)
         await cursor.execute("""
@@ -115,7 +117,6 @@ class Database:
         await self.conn.commit()
 
     async def set_raid_detection_status(self, guild_id: int, enabled: bool):
-        """Enables or disables raid detection for a specific guild."""
         if not self.conn: return
         await self.conn.execute(
             "INSERT INTO guild_settings (guild_id, raid_detection_enabled) VALUES (?, ?) ON CONFLICT(guild_id) DO UPDATE SET raid_detection_enabled = excluded.raid_detection_enabled",
@@ -135,11 +136,28 @@ class Database:
                     ticket_panel_channel_id=row[3],
                     ticket_category_id=row[4],
                     ticket_staff_role_id=row[5],
-                    raid_detection_enabled=row[6] if row[6] is not None else True
+                    raid_detection_enabled=row[6] if row[6] is not None else True,
+                    ticket_counter=row[7] if row[7] is not None else 1
                 )
             return None
 
     # --- Ticket Management ---
+    async def get_and_increment_ticket_counter(self, guild_id: int) -> int:
+        """Gets the current ticket number for a guild and increments it."""
+        if not self.conn: return 1
+        async with self.conn.execute("SELECT ticket_counter FROM guild_settings WHERE guild_id = ?", (guild_id,)) as cursor:
+            row = await cursor.fetchone()
+            current_number = 1
+            if row and row[0] is not None:
+                current_number = row[0]
+            else:
+                # First time, ensure row exists
+                await self.conn.execute("INSERT OR IGNORE INTO guild_settings (guild_id) VALUES (?)", (guild_id,))
+
+        await self.conn.execute("UPDATE guild_settings SET ticket_counter = ticket_counter + 1 WHERE guild_id = ?", (guild_id,))
+        await self.conn.commit()
+        return current_number
+
     async def create_ticket(self, channel_id: int, guild_id: int, user_id: int):
         if not self.conn: return
         await self.conn.execute(

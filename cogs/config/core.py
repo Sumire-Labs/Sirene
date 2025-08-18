@@ -140,7 +140,7 @@ class TicketActionView(View):
         
         embed = embed_factory.info(
             title="サポートチケット",
-            description="サーバーに関する質問や、ユーザーへの報告などはこちらからチケットを作成してください。\n下のボタンを押すと、あなた専用のプライベートチャンネルが作成されます。"
+            description="サーバーに関する質問や、問題が発生した場合はこちらからチケットを作成してください。\n下のボタンを押すと、あなた専用のプライベートチャンネルが作成されます。"
         )
         view = TicketCreateView()
         await interaction.channel.send(embed=embed, view=view)

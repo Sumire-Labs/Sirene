@@ -56,7 +56,8 @@ class TicketCoreCog(commands.Cog):
         }
 
         try:
-            channel_name = f"ticket-{user.name}"
+            ticket_number = await self.db.get_and_increment_ticket_counter(guild.id)
+            channel_name = f"ticket-{ticket_number:04d}"
             ticket_channel = await guild.create_text_channel(
                 name=channel_name,
                 category=category,
