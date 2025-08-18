@@ -19,7 +19,3 @@ cogs:
     enabled: true
     commands:
       core: true
-  tickets:
-    enabled: true
-    commands:
-      core: true
