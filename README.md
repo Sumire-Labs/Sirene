@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  Sirene - Version 0.1.0
+  Sirene - Version 0.1.1
   <br>
 </h1>
 
