@@ -38,7 +38,7 @@ class ChatCog(commands.Cog):
         # Check if the command is enabled in commands.yaml
         command_config = self.config_loader.commands.cogs["ai"].commands
         if not command_config or not command_config.get("ask", False):
-            await ctx.respond(embed=embed_factory.error("Command Disabled", "This command is currently disabled by the administrator."), ephemeral=True)
+            await ctx.respond(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。"), ephemeral=True)
             return
 
         # Acknowledge the command immediately and show a "thinking" state

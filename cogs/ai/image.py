@@ -105,12 +105,13 @@ class ImageCog(commands.Cog):
         prompt: Annotated[str, discord.Option(description="生成したい画像の説明（プロンプト）", required=True)]
     ):
         """Handles the /imagine command."""
+        await ctx.defer()
+
         command_config = self.config_loader.commands.cogs["ai"].commands
-        if not command_config or not command_config.get("imagine", False):
+        if not command_config or not command_config.get("image", False):
             await ctx.respond(embed=embed_factory.error("コマンドが無効です", "このコマンドは現在、管理者によって無効化されています。 সম্প"), ephemeral=True)
             return
 
-        await ctx.defer()
         await self.generate_and_respond(ctx, prompt, is_regenerate=False)
 
 def setup(bot: "MyBot"):

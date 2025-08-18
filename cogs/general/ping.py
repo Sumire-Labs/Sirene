@@ -51,16 +51,13 @@ class PingCog(commands.Cog):
                 return "`測定失敗`"
             return f"`{round(value)}ms`"
 
-        description = (
-            f"🌐 **Discord API**: {format_latency(discord_latency)}\n"
-            f"🗃️ **データベース**: {format_latency(db_latency)}\n"
-            f"🧠 **AI サービス**: {format_latency(ai_latency)}"
-        )
-
         embed = embed_factory.default(
             title="Pong! 🏓",
-            description=description
+            description="各種サービスへの応答速度は以下の通りです。"
         )
+        embed.add_field(name="🌐 Discord API", value=format_latency(discord_latency), inline=True)
+        embed.add_field(name="🗃️ データベース", value=format_latency(db_latency), inline=True)
+        embed.add_field(name="🧠 AI サービス", value=format_latency(ai_latency), inline=True)
 
         await ctx.followup.send(embed=embed)
 
