@@ -20,14 +20,12 @@ class MyBot(discord.Bot):
 
     async def setup_hook(self):
         """This is called once when the bot first starts up."""
-        # Register the persistent view for ticket creation.
         self.add_view(TicketCreateView())
 
 # --- Bot setup ---
-
 bot = MyBot(
     intents=discord.Intents.default(),
-    debug_guilds=None # Optional: for testing in a specific guild
+    debug_guilds=None
 )
 
 @bot.event
@@ -41,14 +39,13 @@ async def on_ready():
     print("UI Factory and services ready.")
     print("-------------------")
 
-# @bot.event
-# async def on_close():
-#     """Called when the bot is shutting down."""
-#     # This was causing the bot to hang on exit.
-#     # For SQLite, it's generally safe to just let the process exit
-#     # without explicitly closing the connection.
-#     print("Bot is shutting down...")
-#     await bot.container.close_services()
+@bot.event
+async def on_close():
+    """A dummy on_close to prevent potential hangs from default cleanup."""
+    print("Bot is shutting down. Bypassing default cleanup.")
+    # We are intentionally not closing services here to avoid hangs.
+    # The OS will handle resource cleanup on process exit.
+    pass
 
 def load_cogs():
     """Loads enabled cogs from subdirectories based on commands.yaml."""
@@ -93,10 +90,13 @@ if __name__ == "__main__":
         print("Please open 'configs/config.yaml' and replace 'YOUR_DISCORD_BOT_TOKEN' with your actual bot token.")
     else:
         try:
-            # bot.run() handles the event loop, Ctrl+C, and cleanup automatically.
             bot.run(bot_token)
         except discord.LoginFailure:
             print("\n!!! LOGIN FAILED !!!")
             print("The provided bot token is invalid. Please check 'configs/config.yaml'.")
+        except KeyboardInterrupt:
+            print("\nCtrl+C received. Shutting down.")
         except Exception as e:
             print(f"\nAn unexpected error occurred during runtime: {e}")
+    
+    print("Bot process finished.")
