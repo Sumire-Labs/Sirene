@@ -138,9 +138,9 @@ class TicketActionView(View):
         if not isinstance(interaction.channel, discord.TextChannel):
             return await interaction.response.send_message("テキストチャンネルでのみ実行できます。", ephemeral=True)
         
-        embed = embed_factory.info(
-            title="サポートチケット",
-            description="サーバーに関する質問や、問題が発生した場合はこちらからチケットを作成してください。\n下のボタンを押すと、あなた専用のプライベートチャンネルが作成されます。"
+        embed = embed_factory.default(
+            title="✉️ サポートチケット",
+            description="サーバーに関する質問や問題が発生した場合は、下のボタンを押してチケットを作成してください。\nあなた専用のプライベートチャンネルが作成され、スタッフが対応します。"
         )
         view = TicketCreateView()
         await interaction.channel.send(embed=embed, view=view)
@@ -170,12 +170,20 @@ class ConfigSelectionView(View):
             settings = await self.db.get_guild_settings(interaction.guild.id)
             if not settings: return await interaction.followup.send("DBエラー", ephemeral=True)
 
-        log_status = "有効" if settings.logging_enabled else "無効"
-        raid_status = "有効" if settings.raid_detection_enabled else "無効"
+        log_status = "✅ 有効" if settings.logging_enabled else "❌ 無効"
+        raid_status = "✅ 有効" if settings.raid_detection_enabled else "❌ 無効"
         log_ch_obj = self.bot.get_channel(settings.log_channel_id) if settings.log_channel_id else None
         log_ch = log_ch_obj.mention if isinstance(log_ch_obj, discord.TextChannel) else "未設定"
         
-        embed = embed_factory.info("ロギング設定", f"**全体:** `{log_status}` | **レイド検知:** `{raid_status}`\n**チャンネル:** {log_ch}")
+        description = (
+            f"**ステータス**\n"
+            f"- `📜` 全体ロギング: {log_status}\n"
+            f"- `🚨` レイド検知: {raid_status}\n\n"
+            f"**設定**\n"
+            f"- `📺` ログチャンネル: {log_ch}"
+        )
+
+        embed = embed_factory.default("ロギング設定", description)
         view = LoggingActionView(self.bot)
         await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
@@ -196,7 +204,12 @@ class ConfigSelectionView(View):
         cat_ch = f"`{cat_ch_obj.name}`" if isinstance(cat_ch_obj, discord.CategoryChannel) else "未設定"
         staff_role = staff_role_obj.mention if staff_role_obj else "未設定"
 
-        embed = embed_factory.info("チケット設定", f"**作成先カテゴリ:** {cat_ch}\n**スタッフロール:** {staff_role}")
+        description = (
+            f"- `📂` 作成先カテゴリ: {cat_ch}\n"
+            f"- `👥` スタッフロール: {staff_role}"
+        )
+
+        embed = embed_factory.default("チケット設定", description)
         view = TicketActionView(self.bot)
         await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
@@ -209,8 +222,8 @@ class ConfigCog(commands.Cog):
     @commands.slash_command(name="config", description="BOTの各種機能設定を行います。")
     @commands.has_permissions(manage_guild=True)
     async def config(self, ctx: discord.ApplicationContext):
-        embed = embed_factory.info(
-            title="BOT機能設定",
+        embed = embed_factory.default(
+            title="⚙️ BOT機能設定",
             description="設定したい機能のボタンを押してください。"
         )
         view = ConfigSelectionView(self.bot)

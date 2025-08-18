@@ -48,12 +48,12 @@ class ChatCog(commands.Cog):
         response_text = await self.ai_service.ask_question(prompt)
 
         # Create an embed for the response
-        embed = embed_factory.info(
-            title="AI Response",
+        embed = embed_factory.default(
+            title=f"Q: {prompt[:250]}",
             description=response_text
         )
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
-        embed.add_field(name="Original Prompt", value=f"```\n{prompt[:1000]}\n```", inline=False)
+        
         if self.bot.user and self.bot.user.display_avatar:
             embed.set_footer(text="Powered by Sirene AI", icon_url=self.bot.user.display_avatar.url)
         else:

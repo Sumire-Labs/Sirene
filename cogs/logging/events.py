@@ -80,12 +80,14 @@ class LoggingCog(commands.Cog):
 
         content = message.content if message.content else "（本文なし、または取得できませんでした）"
         channel_display = message.channel.mention if isinstance(message.channel, (discord.TextChannel, discord.Thread)) else f"`{message.channel}`"
-        embed = embed_factory.error(
+        
+        embed = embed_factory.warning(
             title="メッセージが削除されました",
             description=f"**チャンネル:** {channel_display}"
         )
         embed.set_author(name=f"{message.author.name} ({message.author.id})", icon_url=message.author.display_avatar.url)
         embed.add_field(name="内容", value=f"```\n{content[:1000]}\n```", inline=False)
+        
         if message.attachments:
             files = ", ".join([f"`{att.filename}`" for att in message.attachments])
             embed.add_field(name="添付ファイル", value=files, inline=False)

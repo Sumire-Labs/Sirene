@@ -61,10 +61,11 @@ class OcrCog(commands.Cog):
             if not extracted_text.strip():
                 extracted_text = "画像からテキストを検出できませんでした。"
 
-            embed = embed_factory.info(
+            embed = embed_factory.default(
                 title="画像テキストの読み取り結果",
                 description=f"```\n{extracted_text}\n```"
             )
+            embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
             embed.set_image(url=image.url)
             await ctx.followup.send(embed=embed)
 

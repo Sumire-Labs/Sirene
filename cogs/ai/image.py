@@ -76,15 +76,14 @@ class ImageCog(commands.Cog):
         d_file = discord.File(image_stream, filename="generated_image.png")  # type: ignore
         
         author = interaction.user
-        author_name = author.display_name if author else "Unknown User"
-        author_icon_url = author.display_avatar.url if author and author.display_avatar else None
 
-        embed = embed_factory.success(
-            title="画像が生成されました！",
-            description=""
+        # Create a new embed with a neutral design to frame the image
+        embed = embed_factory.default(
+            title="",
+            description=f"> {prompt[:2000]}"
         )
-        embed.set_author(name=author_name, icon_url=author_icon_url)
-        embed.add_field(name="プロンプト", value=f"```\n{prompt[:1000]}\n```", inline=False)
+        if author:
+            embed.set_author(name=author.display_name, icon_url=author.display_avatar.url)
         embed.set_image(url="attachment://generated_image.png")
 
         view = ImageActionView(self, prompt)

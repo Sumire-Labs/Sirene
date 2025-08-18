@@ -1,15 +1,16 @@
 import discord
 from datetime import datetime
 
-# --- Color Palette (inspired by Material Design) ---
-# You can customize these colors to fit your bot's personality.
-SUCCESS_COLOR = 0x4CAF50  # Green
-ERROR_COLOR = 0xF44336    # Red
-INFO_COLOR = 0x2196F3     # Blue
-WARNING_COLOR = 0xFFC107   # Amber
+# --- Color Palette (inspired by Google Material Design 3) ---
+# Refined colors for a more modern and expressive UI.
+SUCCESS_COLOR = 0x81C784  # Material Green 300
+ERROR_COLOR = 0xE57373    # Material Red 300
+INFO_COLOR = 0x64B5F6     # Material Blue 300
+WARNING_COLOR = 0xFFD54F   # Material Amber 300
+DEFAULT_COLOR = 0x90A4AE   # Material Blue Grey 300
 
 class Embeds:
-    """A factory for creating standardized Discord embeds."""
+    """A factory for creating standardized Discord embeds based on M3E principles."""
 
     def __init__(self, bot_user: discord.ClientUser | None = None):
         self.bot_user = bot_user
@@ -45,6 +46,10 @@ class Embeds:
     def warning(self, title: str, description: str) -> discord.Embed:
         """Creates a warning embed."""
         return self._create_base_embed(f"⚠️ {title}", description, WARNING_COLOR)
+
+    def default(self, title: str, description: str) -> discord.Embed:
+        """Creates a default, neutral embed without a strong semantic color or icon."""
+        return self._create_base_embed(title, description, DEFAULT_COLOR)
 
 # --- Singleton instance for easy access ---
 # This instance can be imported and used across the application.

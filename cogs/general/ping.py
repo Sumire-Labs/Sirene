@@ -45,20 +45,22 @@ class PingCog(commands.Cog):
         
         db_latency, ai_latency = await asyncio.gather(db_ping_task, ai_ping_task)
 
-        embed = embed_factory.info(
-            title="Pong! 🏓",
-            description="各種サービスへの応答速度は以下の通りです。"
-        )
-
-        # Format and add fields
+        # Format latencies
         def format_latency(value: float) -> str:
             if value < 0:
                 return "`測定失敗`"
             return f"`{round(value)}ms`"
 
-        embed.add_field(name="Discord API", value=format_latency(discord_latency), inline=True)
-        embed.add_field(name="データベース", value=format_latency(db_latency), inline=True)
-        embed.add_field(name="AI サービス", value=format_latency(ai_latency), inline=True)
+        description = (
+            f"🌐 **Discord API**: {format_latency(discord_latency)}\n"
+            f"🗃️ **データベース**: {format_latency(db_latency)}\n"
+            f"🧠 **AI サービス**: {format_latency(ai_latency)}"
+        )
+
+        embed = embed_factory.default(
+            title="Pong! 🏓",
+            description=description
+        )
 
         await ctx.followup.send(embed=embed)
 

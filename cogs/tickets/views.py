@@ -9,7 +9,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 
-from utils.embeds import embed_factory
+from utils.embeds import embed_factory, DEFAULT_COLOR
 
 if TYPE_CHECKING:
     from src.main import MyBot
@@ -64,7 +64,7 @@ class TicketCreateModal(Modal):
         initial_message_embed = discord.Embed(
             title=subject,
             description=content,
-            color=discord.Color.green(),
+            color=DEFAULT_COLOR,
             timestamp=datetime.datetime.utcnow()
         )
         initial_message_embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
@@ -80,7 +80,7 @@ class TicketCreateModal(Modal):
             f"---\n件名: {subject}\n内容:\n{content}\n---"
         )
         ai_response = await self.ai_service.ask_question(prompt)
-        ai_embed = embed_factory.info("AIによる一次回答", ai_response)
+        ai_embed = embed_factory.default("💡 AIアシスタントからの提案", ai_response)
         if self.bot.user and self.bot.user.display_avatar:
             ai_embed.set_footer(text="この回答はAIによって生成されました。スタッフが確認し、対応を引き継ぎます。", icon_url=self.bot.user.display_avatar.url)
         else:

@@ -61,10 +61,11 @@ class TranslateCog(commands.Cog):
         )
 
         from_lang = source_language if source_language else "自動検出"
-        embed = embed_factory.info(
+        embed = embed_factory.default(
             title=f"{from_lang} → {target_language} 翻訳結果",
             description=""
         )
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
         embed.add_field(name="原文", value=f"```\n{text[:1000]}\n```", inline=False)
         embed.add_field(name="訳文", value=f"```\n{translated_text[:1000]}\n```", inline=False)
         
